@@ -45,6 +45,7 @@ import androidx.annotation.StyleRes;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.settingslib.graph.CircleBatteryDrawable;
+import com.android.settingslib.graph.DottedCircleBatteryDrawable;
 import com.android.settingslib.graph.ThemedBatteryDrawable;
 import com.android.systemui.DualToneHandler;
 import com.android.systemui.R;
@@ -64,7 +65,8 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
 
     private static final int BATTERY_STYLE_PORTRAIT = 0;
     private static final int BATTERY_STYLE_CIRCLE = 1;
-    private static final int BATTERY_STYLE_TEXT = 2;
+    private static final int BATTERY_STYLE_DOTTED_CIRCLE = 2;
+    private static final int BATTERY_STYLE_TEXT = 3;
 
     @Retention(SOURCE)
     @IntDef({MODE_DEFAULT, MODE_ON, MODE_OFF, MODE_ESTIMATE})
@@ -75,6 +77,7 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
     public static final int MODE_ESTIMATE = 3;
 
     private final CircleBatteryDrawable mCircleDrawable;
+    private final DottedCircleBatteryDrawable mDottedCircleDrawable;
     private final ThemedBatteryDrawable mThemedDrawable;
     private final ImageView mBatteryIconView;
     private TextView mBatteryPercentView;
@@ -115,6 +118,7 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
                 context.getColor(R.color.meter_background_color));
         mPercentageStyleId = atts.getResourceId(R.styleable.BatteryMeterView_textAppearance, 0);
         mCircleDrawable = new CircleBatteryDrawable(context, frameColor);
+        mDottedCircleDrawable = new DottedCircleBatteryDrawable(context, frameColor);
         mThemedDrawable = new ThemedBatteryDrawable(context, frameColor);
         atts.recycle();
 
@@ -193,8 +197,10 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
 
     void onBatteryLevelChanged(int level, boolean pluggedIn) {
         mCircleDrawable.setCharging(pluggedIn);
+        mDottedCircleDrawable.setCharging(pluggedIn);
         mThemedDrawable.setCharging(pluggedIn);
         mCircleDrawable.setBatteryLevel(level);
+        mDottedCircleDrawable.setBatteryLevel(level);
         mThemedDrawable.setBatteryLevel(level);
         mCharging = pluggedIn;
         mLevel = level;
@@ -206,6 +212,7 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
 
     void onPowerSaveChanged(boolean isPowerSave) {
         mCircleDrawable.setPowerSaveEnabled(isPowerSave);
+        mDottedCircleDrawable.setPowerSaveEnabled(isPowerSave);
         mThemedDrawable.setPowerSaveEnabled(isPowerSave);
     }
 
@@ -291,6 +298,7 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
         if (drawPercentOnly && (!drawPercentInside || mCharging) ||
                 mBatteryStyle == BATTERY_STYLE_TEXT) {
             mCircleDrawable.setShowPercent(false);
+            mDottedCircleDrawable.setShowPercent(false);
             mThemedDrawable.setShowPercent(false);
             if (!showing) {
                 mBatteryPercentView = loadPercentView();
@@ -313,6 +321,7 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
             }
         } else {
             mCircleDrawable.setShowPercent(drawPercentInside);
+            mDottedCircleDrawable.setShowPercent(drawPercentInside);
             mThemedDrawable.setShowPercent(drawPercentInside);
             if (showing) {
                 removeView(mBatteryPercentView);
@@ -352,7 +361,7 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
         float iconScaleFactor = typedValue.getFloat();
 
         int batteryHeight = res.getDimensionPixelSize(R.dimen.status_bar_battery_icon_height);
-        int batteryWidth = mBatteryStyle == BATTERY_STYLE_CIRCLE ?
+        int batteryWidth = (mBatteryStyle == BATTERY_STYLE_CIRCLE || mBatteryStyle == BATTERY_STYLE_DOTTED_CIRCLE) ?
                 res.getDimensionPixelSize(R.dimen.status_bar_battery_icon_circle_width) :
                 res.getDimensionPixelSize(R.dimen.status_bar_battery_icon_width);
         int marginBottom = res.getDimensionPixelSize(R.dimen.battery_margin_bottom);
@@ -375,6 +384,11 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
                 mBatteryIconView.setImageDrawable(isUnknown ? getUnknownStateDrawable(): mCircleDrawable);
                 mBatteryIconView.setVisibility(View.VISIBLE);
                 scaleBatteryMeterViews(mBatteryStyle);
+                break;
+            case BATTERY_STYLE_DOTTED_CIRCLE:
+                mBatteryIconView.setImageDrawable(mDottedCircleDrawable);
+                mBatteryIconView.setVisibility(View.VISIBLE);
+                scaleBatteryMeterViews();
                 break;
             case BATTERY_STYLE_TEXT:
                 mBatteryIconView.setVisibility(View.GONE);
@@ -405,6 +419,7 @@ public class BatteryMeterView extends LinearLayout implements DarkReceiver {
      */
     public void updateColors(int foregroundColor, int backgroundColor, int singleToneColor) {
         mCircleDrawable.setColors(foregroundColor, backgroundColor, singleToneColor);
+        mDottedCircleDrawable.setColors(foregroundColor, backgroundColor, singleToneColor);
         mThemedDrawable.setColors(foregroundColor, backgroundColor, singleToneColor);
         mTextColor = singleToneColor;
         if (mBatteryPercentView != null) {
