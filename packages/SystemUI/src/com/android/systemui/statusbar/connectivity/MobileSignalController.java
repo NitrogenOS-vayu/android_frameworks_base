@@ -1070,8 +1070,8 @@ public class MobileSignalController extends SignalController<MobileState, Mobile
     }
 
     private int getDataNetworkType() {
-        return mServiceState != null ?
-                mServiceState.getDataNetworkType() : TelephonyManager.NETWORK_TYPE_UNKNOWN;
+        return mCurrentState != null ?
+                mCurrentState.getDataNetworkType() : TelephonyManager.NETWORK_TYPE_UNKNOWN;
     }
 
     public boolean isVowifiAvailable() {
